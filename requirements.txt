@@ -1,0 +1,94 @@
+#---------- web framework ----------
+
+fastapi==0.116.1
+starlette==0.47.2
+uvicorn[standard]==0.35.0
+anyio==4.10.0
+httpx==0.28.1
+h11==0.16.0
+wsproto==1.2.0
+websockets==15.0.1
+
+#---------- config & validation (Pydantic v2) ----------
+
+pydantic==2.11.7
+pydantic-core==2.33.2
+pydantic-settings==2.11.0
+typing_extensions==4.13.2
+annotated-types==0.7.0
+typing-inspection==0.4.1
+
+#---------- auth (Clerk; replaces deprecated clerk-sdk-python) ----------
+
+clerk-backend-api==1.5.0
+
+#---------- data & ML ----------
+
+numpy==2.2.1
+pandas==2.2.3
+scikit-learn==1.6.1
+scipy==1.15.2
+joblib==1.4.2
+threadpoolctl==3.6.0
+
+#---------- NLP / vectors ----------
+
+transformers==4.45.2
+tokenizers==0.20.3
+sentence-transformers==3.2.1
+torch==2.4.1
+faiss-cpu>=1.7.4,<2.0
+safetensors==0.4.5
+langchain-huggingface
+pinecone==7.0.0
+
+#---------- visualization ----------
+
+matplotlib==3.9.2
+seaborn==0.13.2
+
+#---------- media (headless servers) ----------
+
+imageio==2.35.1
+imageio-ffmpeg==0.5.1
+opencv-python-headless==4.10.0.84
+
+#---------- persistence ----------
+
+SQLAlchemy==2.0.41
+PyMySQL==1.1.1
+sqlmodel
+
+#---------- utils ----------
+
+python-dotenv==1.0.1
+orjson==3.10.7
+regex==2024.11.6
+tenacity==9.0.0
+tqdm==4.66.5
+rich==13.9.4
+requests==2.32.3
+urllib3==2.2.3
+certifi==2024.8.30
+idna==3.7
+charset-normalizer==3.3.2
+python-dateutil==2.9.0.post0
+pytz==2024.2
+tzdata==2024.2
+packaging==24.1
+
+#---------- server reload / file watching ----------
+
+watchfiles==0.24.0
+
+#---------- editor / notebooks (optional; keep if used locally) ----------
+
+ipykernel==6.29.5
+jupyter_client==8.6.2
+jupyter_core==5.7.2
+
+#---------- NLP / LLM ----------
+
+langchain==1.0.3
+langchain-core==1.0.3
+langchain-groq==1.0.0

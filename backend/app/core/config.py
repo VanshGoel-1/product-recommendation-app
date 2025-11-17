@@ -1,0 +1,19 @@
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    # App Config
+    PROJECT_NAME: str = "ProdRecommendationApp"
+    SECRET_KEY: str = "your-secret-key"
+    DATABASE_URL: str = "sqlite:///./test.db"
+    BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:5174"]
+    CLERK_SECRET_KEY: str
+    # Pinecone & AI Keys
+    PINECONE_API_KEY: str
+    PINECONE_HOST: str
+    GROQ_API_KEY: str
+
+    class Config:
+        # This tells Pydantic to load the variables from a .env file
+        env_file = ".env"
+
+settings = Settings()
