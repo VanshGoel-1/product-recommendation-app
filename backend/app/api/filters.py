@@ -1,25 +1,39 @@
-from fastapi import APIRouter, Depends, HTTPException
-from typing import List
-from sqlmodel import select
-from app.db.db import get_session
-from app.models.models import Product
+from fastapi import APIRouter, Depends
+from app.services.ai_service import get_ai_service, AIService
 from app.core.auth import get_auth_user
-
 
 router = APIRouter(prefix="/api/v1/filters", tags=["filters"])
 
 
-@router.get("/brands", response_model=List[str])
-async def get_unique_brands(
+@router.get("/brands")
+async def get_brands(
+    ai: AIService = Depends(get_ai_service),
     user_claims: dict = Depends(get_auth_user),
-    session=Depends(get_session)
 ):
-    """Return sorted unique brand names from PostgreSQL."""
+    """
+    Returns unique brand names from Pinecone metadata.
+    """
     try:
-        stmt = select(Product.brand).where(Product.brand.is_not(None))
-        rows = session.exec(stmt).all()
-        brands = sorted({r for r in rows if r})
-        return brands
+        index = ai.get_vector_index()
+
+        # Dummy vector to fetch metadata (dimension must match your index)
+        dummy_vector = [0.0] * index.describe_index_stats()["dimension"]
+
+        result = index.query(
+            vector=dummy_vector,
+            top_k=1000,  # adjust if needed
+            include_metadata=True,
+        )
+
+        brands = set()
+        for match in result.get("matches", []):
+            metadata = match.get("metadata") or {}
+            brand = metadata.get("brand")
+            if isinstance(brand, str) and brand.strip():
+                brands.add(brand.strip())
+
+        return sorted(brands)
+
     except Exception as e:
-        print("Error reading brands:", e)
-        raise HTTPException(status_code=500, detail="Failed to retrieve brand list")
+        print("Error reading brands from Pinecone:", e)
+        return []

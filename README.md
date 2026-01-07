@@ -1,31 +1,22 @@
-# AI Product Recommendation App
+# Product Recommendation App
 
-**Author:** `Vansh Goel`
+**Author:** Vansh Goel
 **Date:** October 21, 2025
 
-This is a full-stack web application built for an intern assignment. It uses a FastAPI backend and a React frontend to deliver AI-powered product recommendations, generative AI descriptions, and data analytics.
+A full-stack AI-powered product recommendation engine. It uses a **FastAPI** backend to serve semantic search results from a **Pinecone** vector database, and uses **Groq** (LLaMA 3.1) to generate creative product descriptions in real-time. The frontend is built with **React** (Vite) and **Tailwind CSS**.
 
 ---
 
 ## Features
 
-* **Semantic Search:** A React-based chat interface allows users to search for products using natural language (e.g., "a comfy red chair").
-* **Vector Database:** Product titles and descriptions are converted into 384-dimensional embeddings and stored in a **Pinecone** vector database for fast semantic retrieval.
-* **Generative AI:** Uses a **Groq** API (running LLaMA 3.1) to generate new, creative product descriptions for each search result in real-time.
-* **Computer Vision:** Includes a notebook that uses a **Zero-Shot Classification** model (OpenAI's CLIP) to accurately classify product images without any training.
-* **Data Analytics:** A dedicated analytics page with charts displaying the top product brands and categories, read directly from the dataset.
-
----
-
-## Deliverables
-
-This repository contains all required deliverables:
-
-1.  **Frontend App:** (`/frontend/product-recommendation-app`) The React + TypeScript application.
-2.  **Backend App:** (`/backend`) The FastAPI application.
-3.  **Data Analytics Notebook:** (`/notebooks/Data_Analytics_Notebook.ipynb`) Contains the full data cleaning, embedding, and Pinecone upload pipeline.
-4.  **Model Training Notebook:** (`/notebooks/Model_Training_Notebook.ipynb`) Demonstrates the zero-shot CV classification model.
-5.  **README:** This file.
+*   **Semantic Search:** Natural language search (e.g., "ergonomic chair for back pain") powered by vector embeddings.
+*   **Generative AI:** Real-time generation of creative product descriptions using LLaMA 3.1.
+*   **Security:**
+    *   **Rate Limiting:** Protects the API from abuse (e.g., max 20 searches/minute).
+    *   **Input Validation:** Strict validation ensures query integrity.
+    *   **Secure Config:** Enforced environment variable protection for API keys.
+*   **Vector Database:** Uses **Pinecone** to store and retrieve 384-dimensional embeddings (`all-MiniLM-L6-v2`).
+*   **Analytics:** Visual dashboard for exploring product brands and categories.
 
 ---
 
@@ -33,43 +24,80 @@ This repository contains all required deliverables:
 
 | Area | Technology | Purpose |
 | :--- | :--- | :--- |
-| **Backend** | **FastAPI** | High-performance Python API framework. |
-| **Frontend** | **React (with Vite)** | Modern frontend library for the user interface. |
-| **Language** | **Python 3.11+** & **TypeScript** | Type-safe code for both backend and frontend. |
-| **Vector DB** | **Pinecone** | Storing and querying text embeddings. |
-| **NLP (Embeddings)** | **LangChain** (`HuggingFaceEmbeddings`) | Generating `all-MiniLM-L6-v2` embeddings. |
-| **GenAI** | **LangChain** (`ChatGroq`) | Generating product descriptions with `llama-3.1-8b-instant`. |
-| **CV** | **Hugging Face Transformers** | Zero-shot image classification with `CLIP`. |
-| **Analytics** | **Pandas** & **Chart.js** | Data processing and frontend visualization. |
+| **Backend** | **FastAPI** | High-performance Python API. |
+| **Security** | **SlowAPI** | Rate limiting middleware. |
+| **Frontend** | **React + Vite** | Modern, fast frontend framework. |
+| **Styling** | **Tailwind CSS** | Utility-first CSS framework. |
+| **Vector DB** | **Pinecone** | Semantic search engine. |
+| **AI / NLP** | **LangChain** | Orchestrating embeddings and LLM calls. |
+| **LLM** | **Groq (LLaMA 3.1)** | Fast inference for text generation. |
 
 ---
 
-## How to Run This Project
+## Setup Instructions
 
 You will need two terminals to run the backend and frontend servers simultaneously.
 
 ### 1. Backend Setup
-
-First, set up and run the FastAPI server.
 
 ```bash
 # 1. Navigate to the backend directory
 cd backend
 
 # 2. Create and activate a Python virtual environment
-python -m venv .venv
+# Windows (Python 3.11+)
+py -3.11 -m venv .venv
 .\.venv\Scripts\activate
 
-# 3. Install all required packages
+# Mac/Linux
+python3 -m venv .venv
+source .venv/bin/activate
+
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Set up your API keys
-#   - Rename the file `.env.example` to `.env`
-#   - Open `.env` and add your keys for:
-#     - PINECONE_API_KEY
-#     - PINECONE_HOST
-#     - GROQ_API_KEY
-#     - SECRET_KEY (can be any random string)
+# 4. Configure Environment Variables
+# Create a .env file based on .env.example
+cp .env.example .env
 
-# 5. Run the server
+# OPEN .env AND SET THE FOLLOWING:
+# PINECONE_API_KEY=your_key
+# PINECONE_HOST=your_host_url
+# GROQ_API_KEY=your_key
+# SECRET_KEY=generate_a_secure_random_string_here  <-- REQUIRED!
+```
+
+> [!CAUTION]
+> The application will **fail to start** if `SECRET_KEY` is missing. Do not use a default value in production.
+
+```bash
+# 5. Run the Server
 uvicorn app.main:app --reload
+```
+
+The server will start at `http://localhost:8000`.
+
+### 2. Frontend Setup
+
+```bash
+# 1. Navigate to the frontend directory
+cd frontend/product-recommendation-app
+
+# 2. Install dependencies
+npm install
+
+# 3. Run the Development Server
+npm run dev
+```
+
+The app will open at `http://localhost:5173`.
+
+---
+
+## Security Measures
+
+This project implements several security best practices:
+
+1.  **Rate Limiting**: The search endpoint (`/api/v1/recommend/search`) is limited to prevent abuse.
+2.  **Input Sanitization**: Search queries are strictly validated for length and content.
+3.  **Secret Management**: Critical API keys are loaded strictly from `.env` and are not hardcoded.

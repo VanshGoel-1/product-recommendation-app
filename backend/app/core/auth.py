@@ -1,29 +1,34 @@
-# File: backend/app/core/auth.py
-
-from fastapi import Depends, HTTPException, Security
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from clerk_backend_api import Clerk
-from app.core.config import settings
+from fastapi import HTTPException, Request
 from starlette.status import HTTP_401_UNAUTHORIZED
+from clerk_backend_api import Clerk
+from clerk_backend_api.security import authenticate_request
+from clerk_backend_api.security.types import AuthenticateRequestOptions
+from app.core.config import settings
 
-# 1. Initialize Clerk with your Secret Key from settings
-clerk = Clerk(secret_key=settings.CLERK_SECRET_KEY)
-# 2. Set up the "Bearer" token security scheme
-bearer_scheme = HTTPBearer()
+clerk = Clerk(bearer_auth=settings.CLERK_SECRET_KEY)
 
-async def get_auth_user(creds: HTTPAuthorizationCredentials = Security(bearer_scheme)) -> dict:
+async def get_auth_user(request: Request) -> dict:
     try:
-        # 3. Get the token from the "Bearer" header
-        token = creds.credentials
-        
-        # 4. Verify the token using Clerk's SDK
-        session_claims = clerk.sessions.verify_token(token)
-        
-        if not session_claims:
-            raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid token")
-        
-        # 5. Return the user's data
-        return session_claims
+        request_state = clerk.authenticate_request(
+            request,
+            AuthenticateRequestOptions(
+                # Optional but recommended in dev
+                authorized_parties=["http://localhost:5173"]
+            )
+        )
+
+        if not request_state.is_signed_in:
+            raise HTTPException(
+                status_code=HTTP_401_UNAUTHORIZED,
+                detail=request_state.reason,
+            )
+
+        # ✅ This is your JWT payload
+        return request_state.payload
+
     except Exception as e:
-        print(f"Authentication error: {e}")
-        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
+        print("Authentication error:", e)
+        raise HTTPException(
+            status_code=HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )

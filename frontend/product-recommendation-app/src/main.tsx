@@ -1,5 +1,5 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
+import * as React from 'react'
+import { createRoot } from 'react-dom/client'
 import App from './App'
 import './index.css'
 import { BrowserRouter } from 'react-router-dom'
@@ -13,7 +13,7 @@ if (!PUBLISHABLE_KEY) {
   throw new Error("Missing Clerk Publishable Key");
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     {/* 3. Wrap your app in ClerkProvider */}
     <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">

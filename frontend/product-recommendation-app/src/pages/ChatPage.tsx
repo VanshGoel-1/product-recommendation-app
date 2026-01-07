@@ -1,250 +1,420 @@
-// File: src/pages/ChatPage.tsx
-
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Sparkles, ChevronRight, SlidersHorizontal, Loader2 } from "lucide-react";
+import { useAuth } from "@clerk/clerk-react";
 import ProductCard from "../components/ProductCard";
 import type { Product } from "../components/ProductCard";
 import SkeletonCard from "../components/SkeletonCard";
-// 1. Import useAuth
-import { useAuth } from "@clerk/clerk-react";
+import CinematicBackground from "../components/CinematicBackground";
 
 export default function ChatPage() {
   const [query, setQuery] = useState("");
+  const [hasSearched, setHasSearched] = useState(false);
   const [results, setResults] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Filters
   const [brandFilter, setBrandFilter] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [brands, setBrands] = useState<string[]>([]);
   const [loadingBrands, setLoadingBrands] = useState(true);
 
-  // 2. Get the getToken function from Clerk
+  // Expanded Card State
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
   const { getToken } = useAuth();
 
-  // Fetch brands when the component mounts
+  // Disable body scroll when modal is open
+  useEffect(() => {
+    if (selectedProduct) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+  }, [selectedProduct]);
+
+  // Fetch Brands
   useEffect(() => {
     const fetchBrands = async () => {
       setLoadingBrands(true);
       try {
-        // 3. Get token for the brands request
         const token = await getToken();
-        
+        if (!token) return;
+
         const url = `${import.meta.env.VITE_API_URL}/filters/brands`;
-        // 4. Add Authorization header
         const res = await axios.get<string[]>(url, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
-        setBrands(['', ...res.data]);
+
+        // Backend returns list of strings
+        setBrands(["", ...res.data]);
       } catch (err) {
-        console.error("Failed to fetch brands:", err);
-        setBrands(['']);
+        console.error("Failed to fetch brands", err);
+        setBrands([""]);
       } finally {
         setLoadingBrands(false);
       }
     };
     fetchBrands();
-  }, [getToken]); // 5. Add getToken to dependency array
+  }, [getToken]);
 
-  const handleSearch = async () => {
-    if (!query.trim()) return;
+  const handleSearch = async (overrideQuery?: string) => {
+    const searchQuery = overrideQuery !== undefined ? overrideQuery : query;
+    if (!searchQuery.trim()) return;
 
+    if (overrideQuery) setQuery(overrideQuery);
+
+    // Trigger transition state immediately
+    setHasSearched(true);
     setLoading(true);
     setError("");
     setResults([]);
 
-    const url = `${import.meta.env.VITE_API_URL}/recommend/search`;
-
     const payload = {
-      query,
-      top_k: 5,
+      query: searchQuery,
+      top_k: 8,
       ...(brandFilter && { brand_filter: brandFilter }),
       ...(minPrice && !isNaN(parseFloat(minPrice)) && { min_price: parseFloat(minPrice) }),
       ...(maxPrice && !isNaN(parseFloat(maxPrice)) && { max_price: parseFloat(maxPrice) }),
     };
 
     try {
-      // 3. Get token for the search request
       const token = await getToken();
+      if (!token) {
+        setError("Session expired. Please refresh.");
+        return;
+      }
 
-      // 4. Add Authorization header
+      const url = `${import.meta.env.VITE_API_URL}/recommend/search`;
       const res = await axios.post<Product[]>(url, payload, {
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` 
+          Authorization: `Bearer ${token}`,
         },
       });
+
       setResults(res.data);
     } catch (err: any) {
-      if (err.response?.status === 400) {
-        setError(err.response?.data?.detail || "Invalid filter input.");
-      } else {
-        setError("Failed to get results. Please try again.");
-      }
-      console.error(
-        "Error:",
-        err.response?.status,
-        err.response?.data || err.message
-      );
-      setResults([]);
+      setError("Failed to fetch results. Please try again.");
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   const clearFilters = () => {
-    setBrandFilter('');
-    setMinPrice('');
-    setMaxPrice('');
-    // Note: handleSearch is not called here automatically
-    // You could trigger it by uncommenting the line below
-    // if (query.trim()) { handleSearch(); }
+    setBrandFilter("");
+    setMinPrice("");
+    setMaxPrice("");
   };
 
+  const examplePrompts = [
+    "Minimal wooden desk under $300",
+    "Ergonomic chair for home office",
+    "Modern sofa, neutral colors",
+  ];
+
   return (
-    // The rest of your UI code (unchanged)
-    <div className="relative isolate min-h-screen bg-gray-50 pb-20">
-      <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">
-        <div className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#9DD3EE] to-[#6EC5F6] opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]" style={{ clipPath: 'polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)'}} />
-      </div>
-      <div className="mx-auto max-w-7xl px-4 py-8 relative z-10">
-        <h1 className="mb-8 text-center text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
-          Discover Products with AI
-        </h1>
-        <p className="mb-10 text-center text-lg text-gray-600 max-w-2xl mx-auto">
-          Find exactly what you need with intelligent search and filtering options.
-        </p>
-        <div className="mb-6 flex space-x-3">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="e.g., 'a comfy red chair for home office'"
-            className="flex-grow rounded-xl border border-gray-300 p-3 text-lg shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out"
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            aria-label="Search products"
-          />
-          <button
-            onClick={handleSearch}
-            className="flex w-32 items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-lg font-semibold text-white shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition duration-200 ease-in-out"
-            disabled={loading || !query.trim()}
-          >
-            {loading ? (
-              <svg className="h-6 w-6 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            ) : (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="mr-2 h-5 w-5">
-                  <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
-                </svg>
-                Search
-              </>
-            )}
-          </button>
-        </div>
-        <div className="mb-10 flex flex-wrap items-end justify-center gap-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
-          <p className="w-full text-center text-lg font-semibold text-gray-800 mb-4 sm:hidden">Filter Your Search</p>
-          <div className="flex-grow max-w-[12rem] md:max-w-none">
-            <label htmlFor="brand" className="mb-2 block text-sm font-medium text-gray-700">Brand</label>
-            <select
-              id="brand"
-              value={brandFilter}
-              onChange={(e) => setBrandFilter(e.target.value)}
-              disabled={loadingBrands}
-              className="w-full rounded-lg border border-gray-300 bg-white p-2.5 text-base shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 appearance-none transition duration-200 ease-in-out"
-              aria-label="Filter by brand"
+    <div className="relative min-h-screen font-sans text-gray-100 bg-[#0B1026] selection:bg-blue-500/40">
+      <CinematicBackground dimmed={hasSearched} />
+
+      {/* EXPANDED PRODUCT OVERLAY */}
+      <AnimatePresence>
+        {selectedProduct && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedProduct(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            {/* Expanded Card */}
+            <motion.div
+              layoutId={`card-container-${selectedProduct.id}`}
+              className="relative w-full max-w-4xl overflow-hidden rounded-3xl bg-[#0B1026] shadow-2xl ring-1 ring-white/10"
+              onClick={(e) => e.stopPropagation()}
             >
-              {loadingBrands ? (
-                <option>Loading brands...</option>
-              ) : (
-                brands.map((brandName) => (
-                  <option key={brandName || 'all'} value={brandName}>
-                    {brandName || 'All Brands'}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
-          <div className="flex-grow max-w-[8rem] md:max-w-none">
-            <label htmlFor="minPrice" className="mb-2 block text-sm font-medium text-gray-700">Min Price ($)</label>
-            <input
-              id="minPrice"
-              type="number"
-              value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
-              placeholder="50"
-              min="0"
-              className="w-full rounded-lg border border-gray-300 p-2.5 text-base shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-200 ease-in-out"
-              aria-label="Minimum price"
-            />
-          </div>
-          <div className="flex-grow max-w-[8rem] md:max-w-none">
-            <label htmlFor="maxPrice" className="mb-2 block text-sm font-medium text-gray-700">Max Price ($)</label>
-            <input
-              id="maxPrice"
-              type="number"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-              placeholder="200"
-              min="0"
-              className="w-full rounded-lg border border-gray-300 p-2.5 text-base shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-200 ease-in-out"
-              aria-label="Maximum price"
-            />
-          </div>
-          {(brandFilter || minPrice || maxPrice) && (
-               <button
-                   onClick={clearFilters}
-                   className="flex-shrink-0 mt-8 sm:mt-0 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition duration-200 ease-in-out"
-                   title="Clear all filters"
-               >
-                   Clear Filters
-               </button>
-          )}
-        </div>
-        <div className="mt-12">
-          {error && (
-            <div className="rounded-md bg-red-50 p-4 mb-6">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94l-1.72-1.72z" clipRule="evenodd" />
-                  </svg>
+              <div className="grid grid-cols-1 md:grid-cols-2">
+                {/* Image Section */}
+                <div className="relative h-[300px] md:h-full bg-black">
+                  <motion.img
+                    layoutId={`card-image-${selectedProduct.id}`}
+                    src={selectedProduct.images?.[0] || "https://via.placeholder.com/300"}
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0B1026] via-transparent to-transparent opacity-60 md:hidden" />
+
+                  {/* Close Button Mobile */}
+                  <button
+                    onClick={() => setSelectedProduct(null)}
+                    className="absolute top-4 right-4 rounded-full bg-black/50 p-2 text-white backdrop-blur-md md:hidden"
+                  >
+                    <ChevronRight className="h-6 w-6 rotate-180" />
+                  </button>
                 </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">Error during search:</h3>
-                  <div className="mt-2 text-sm text-red-700">
-                    <p>{error}</p>
+
+                {/* Content Section */}
+                <div className="flex flex-col p-8 md:p-10">
+                  <div className="mb-4 flex items-start justify-between">
+                    <motion.h2
+                      layoutId={`card-title-${selectedProduct.id}`}
+                      className="text-3xl font-bold leading-tight text-white mb-2"
+                    >
+                      {selectedProduct.title}
+                    </motion.h2>
+
+                    {/* Desktop Close/Back Buttons */}
+                    <button
+                      onClick={() => setSelectedProduct(null)}
+                      className="hidden md:flex flex-col items-center justify-center gap-1 rounded-xl bg-white/5 p-3 text-xs text-white/50 hover:bg-white/10 transition-colors"
+                    >
+                      <span className="font-bold">ESC</span>
+                    </button>
+                  </div>
+
+                  <div className="mb-6 flex flex-wrap gap-2">
+                    {selectedProduct.brand && (
+                      <span className="rounded-full bg-blue-500/20 px-3 py-1 text-xs font-medium text-blue-300 border border-blue-500/30">
+                        {selectedProduct.brand}
+                      </span>
+                    )}
+                    {selectedProduct.categories && selectedProduct.categories.split(",").map((cat, i) => (
+                      <span key={i} className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-gray-300 border border-white/10">
+                        {cat.trim()}
+                      </span>
+                    ))}
+                  </div>
+
+                  <p className="text-lg text-gray-300 leading-relaxed mb-8">
+                    {selectedProduct.generated_description}
+                  </p>
+
+                  <div className="mt-auto space-y-6 border-t border-white/10 pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Price</p>
+                        <p className="text-4xl font-bold text-emerald-400">
+                          ${selectedProduct.price?.toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="flex gap-4">
+                        <button
+                          onClick={() => setSelectedProduct(null)}
+                          className="rounded-xl border border-white/10 px-6 py-3 font-medium text-white hover:bg-white/5 transition-colors"
+                        >
+                          Back to Search
+                        </button>
+                        <button className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-3 font-bold text-white shadow-lg shadow-blue-500/25 hover:bg-blue-500 transition-colors">
+                          View Deal <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-          {!loading && results.length === 0 && !error && (
-            <div className="text-center py-12 rounded-lg bg-white border border-gray-200 shadow-sm">
-              <p className="text-xl font-medium text-gray-600">No products found for your query.</p>
-              <p className="mt-2 text-md text-gray-500">Try adjusting your search terms or filters.</p>
-            </div>
-          )}
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {loading && (
-              <>
-                <SkeletonCard />
-                <SkeletonCard />
-                <SkeletonCard />
-              </>
-            )}
-            {!loading &&
-              results.length > 0 &&
-              !error &&
-              results.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+            </motion.div>
           </div>
-        </div>
-      </div>
-      <div className="absolute inset-x-0 bottom-0 -z-10 transform-gpu overflow-hidden blur-3xl" aria-hidden="true">
-        <div className="relative left-[calc(50%+3rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 bg-gradient-to-tr from-[#9DD3EE] to-[#6EC5F6] opacity-30 sm:left-[calc(50%+36rem)] sm:w-[72.1875rem]" style={{ clipPath: 'polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)' }} />
+        )}
+      </AnimatePresence>
+
+      {/* Main Container */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
+        {/* HERO / SEARCH SECTION */}
+        <motion.div
+          layout
+          className={`relative z-20 flex flex-col justify-center transition-all duration-700 ${hasSearched ? "pt-6 pb-6 min-h-[0px]" : "min-h-[85vh] pt-0"}`}
+        >
+          {/* Header */}
+          <motion.div layout className="text-center mb-8">
+            {!hasSearched && (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              >
+                <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 drop-shadow-xl">
+                  Discover Products <br /> With AI
+                </h1>
+                <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed font-medium">
+                  Describe what you want naturally. Our AI understands intent, not just keywords.
+                </p>
+              </motion.div>
+            )}
+          </motion.div>
+
+          {/* Search Bar */}
+          <motion.div
+            layout
+            className={`mx-auto w-full transition-all duration-500 ${hasSearched ? "max-w-6xl flex items-center gap-4" : "max-w-2xl"}`}
+          >
+            <div className="relative flex-1 group">
+              {/* Glow behind search bar */}
+              <div className={`absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 opacity-20 blur transition duration-500 group-hover:opacity-40 ${hasSearched ? "hidden" : "block"}`} />
+
+              <div className="relative flex items-center bg-[#151c36] border border-white/10 rounded-2xl shadow-2xl transition-all duration-300 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20">
+                <Search className="ml-4 h-6 w-6 text-gray-400" />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  placeholder={hasSearched ? "Refine your search..." : "Try 'a sleek coffee maker'..."}
+                  className="w-full bg-transparent px-4 py-4 text-lg text-white placeholder-gray-500 focus:outline-none"
+                  autoFocus
+                />
+                <div className="pr-2">
+                  <button
+                    onClick={() => handleSearch()}
+                    disabled={loading || !query.trim()}
+                    className="flex h-10 items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 px-6 font-medium text-white shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Search"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Example Prompts */}
+            {!hasSearched && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="mt-8 flex flex-wrap justify-center gap-3"
+              >
+                {examplePrompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    onClick={() => handleSearch(prompt)}
+                    className="flex items-center gap-2 rounded-full border border-white/10 bg-[#1e2746] px-5 py-2.5 text-sm text-gray-200 shadow-lg transition-all hover:bg-[#252f50] hover:border-white/20 hover:-translate-y-0.5"
+                  >
+                    <Sparkles className="h-3 w-3 text-blue-400" />
+                    {prompt}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </motion.div>
+        </motion.div>
+
+        {/* RESULTS */}
+        <AnimatePresence>
+          {hasSearched && (
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr]"
+            >
+              {/* FILTERS */}
+              <div className="order-first lg:order-none">
+                <div className="sticky top-24 space-y-6 rounded-2xl border border-white/10 bg-[#151c36] p-6 shadow-xl">
+                  <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                    <h3 className="flex items-center gap-2 text-lg font-semibold text-white">
+                      <SlidersHorizontal className="h-4 w-4 text-blue-400" />
+                      Filters
+                    </h3>
+                    {(brandFilter || minPrice || maxPrice) && (
+                      <button
+                        onClick={clearFilters}
+                        className="text-xs font-medium text-blue-400 hover:text-blue-300"
+                      >
+                        Reset All
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Brand Filter */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-gray-300">Brand</label>
+                    <div className="relative">
+                      <select
+                        value={brandFilter}
+                        onChange={(e) => setBrandFilter(e.target.value)}
+                        className="w-full appearance-none rounded-xl bg-[#0B1026] border border-white/10 py-3 pl-4 pr-10 text-sm text-gray-200 focus:border-blue-500 focus:outline-none"
+                      >
+                        {loadingBrands ? <option>Loading...</option> : (
+                          <>
+                            <option value="">All Brands</option>
+                            {brands.filter(b => b).map(b => (
+                              <option key={b} value={b} className="bg-[#0B1026]">{b}</option>
+                            ))}
+                          </>
+                        )}
+                      </select>
+                      <ChevronRight className="absolute right-3 top-3.5 h-4 w-4 rotate-90 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Price Filter */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-gray-300">Price Limit</label>
+                    <div className="flex gap-3">
+                      <input
+                        type="number"
+                        placeholder="Min"
+                        value={minPrice}
+                        onChange={(e) => setMinPrice(e.target.value)}
+                        className="w-full rounded-xl bg-[#0B1026] border border-white/10 py-3 px-4 text-sm text-gray-200 focus:border-blue-500 focus:outline-none placeholder-gray-600"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Max"
+                        value={maxPrice}
+                        onChange={(e) => setMaxPrice(e.target.value)}
+                        className="w-full rounded-xl bg-[#0B1026] border border-white/10 py-3 px-4 text-sm text-gray-200 focus:border-blue-500 focus:outline-none placeholder-gray-600"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* GRID */}
+              <div className="min-h-[500px]">
+                {error && (
+                  <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-red-200">
+                    <span className="font-bold mr-2">Error:</span> {error}
+                  </div>
+                )}
+
+                {!loading && results.length === 0 && !error && (
+                  <div className="flex h-[400px] flex-col items-center justify-center rounded-3xl border border-white/10 bg-[#151c36] text-center p-8">
+                    <div className="mb-6 rounded-full bg-white/5 p-6">
+                      <Search className="h-10 w-10 text-gray-500" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">No matches found</h3>
+                    <p className="text-gray-400 max-w-md">
+                      Try removing some filters or searching for something simpler like "blue shoes".
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+                  {loading && Array.from({ length: 6 }).map((_, i) => (
+                    <SkeletonCard key={i} />
+                  ))}
+                  {!loading && results.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onClick={() => setSelectedProduct(product)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </div>
     </div>
   );
