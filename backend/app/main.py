@@ -4,8 +4,17 @@ from app.core.config import settings
 from app.api import recommend
 from app.api import analytics
 from app.api import filters
+from app.api import orders
+from app.db.db import init_db
 
 app = FastAPI(title=settings.PROJECT_NAME)
+
+@app.on_event("startup")
+def on_startup():
+    try:
+        init_db()
+    except Exception as e:
+        print(f"WARNING: Database initialization failed. Ensure Postgres is running. Error: {e}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -26,6 +35,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.include_router(recommend.router)
 app.include_router(analytics.router)
 app.include_router(filters.router)
+app.include_router(orders.router)
 
 @app.get("/")
 def root():

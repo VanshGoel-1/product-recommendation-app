@@ -36,7 +36,12 @@ async def generate_description_for_match(
         title = title[0] if title else "this product"
 
     chain = ai.get_prompt() | ai.get_llm()
-    gen_description = await chain.ainvoke({"title": str(title)})
+    gen_description = await chain.ainvoke({
+        "title": str(title),
+        "brand": str(metadata.get("brand", "Unknown Brand")),
+        "price": str(metadata.get("price", "N/A")),
+        "categories": str(metadata.get("categories", "General"))
+    })
 
     # ---- Parse images safely ----
     image_list: List[str] = []
