@@ -184,7 +184,7 @@ export default function AnalyticsPage() {
     <div className="relative min-h-screen font-sans text-gray-100 selection:bg-blue-500/40 pb-20">
       <CinematicBackground />
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-24">
 
         {/* Header */}
         <motion.div

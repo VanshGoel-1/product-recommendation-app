@@ -43,11 +43,19 @@ class AIService:
             # 4. Prepare a chat prompt template
             cls._instance.prompt = ChatPromptTemplate.from_template(
                 """
-                You are a witty and creative marketing assistant.
-                A user is looking for a product. Your job is to write a short,
-                catchy product description (1-2 sentences) for a product with the
-                following title: {title}.
-                Do not just repeat the title. Be creative.
+                You are a sophisticated AI shopping assistant for a premium furniture and lifestyle brand.
+                
+                Product Details:
+                Title: {title}
+                Brand: {brand}
+                Price: {price}
+                Categories: {categories}
+                
+                Task:
+                Write a compelling, concise, and conversion-driven product description (2 sentences max).
+                Focus on the benefits, lifestyle appeal, and quality. 
+                Do NOT use "Introduce..." or "Here is...". Just give the description.
+                Make it sound like a high-end catalog description.
                 """
             )
 

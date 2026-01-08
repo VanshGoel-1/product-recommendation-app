@@ -26,6 +26,19 @@ class UserSearch(SQLModel, table=True):
     user_id: Optional[str] = Field(index=True)
     query: str
     brand_filter: Optional[str] = None
+
     min_price: Optional[float] = None
     max_price: Optional[float] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Order(SQLModel, table=True):
+    """Represents a customer order."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: str = Field(index=True)
+    items: str  # JSON string of items
+    total_amount: float
+    status: str = Field(default="pending")
+    shipping_address: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+

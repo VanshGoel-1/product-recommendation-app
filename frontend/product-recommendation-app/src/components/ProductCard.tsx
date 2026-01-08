@@ -1,5 +1,6 @@
 import { motion, useMotionTemplate, useMotionValue } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
+import { useCart } from "../context/CartContext";
 
 export interface Product {
   id: string;
@@ -8,7 +9,7 @@ export interface Product {
   brand: string | null;
   price: number | null;
   images: string[] | null;
-  categories: string | null;
+  categories: string | string[] | null;
   generated_description: string | null;
 }
 
@@ -18,6 +19,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onClick }: ProductCardProps) {
+  const { addToCart } = useCart();
   const displayImage =
     product.images && product.images.length > 0
       ? product.images[0].trim()
@@ -99,12 +101,19 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
           <div className="flex flex-col">
             <span className="text-xs uppercase tracking-wider text-gray-500">Price</span>
             <span className="text-xl font-bold text-emerald-400">
-              ${product.price?.toFixed(2) || "N/A"}
+              ₹{(product.price ? product.price * 90 : 0).toLocaleString('en-IN')}
             </span>
           </div>
 
-          <button className="rounded-full bg-white/5 p-2 text-blue-300 hover:bg-white/10 transition-colors">
-            <Sparkles size={18} />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              addToCart(product);
+            }}
+            className="flex items-center gap-2 rounded-full bg-blue-600/10 px-4 py-2 text-sm font-medium text-blue-400 hover:bg-blue-600 hover:text-white transition-all border border-blue-500/20"
+          >
+            <ShoppingBag size={16} />
+            Add to Cart
           </button>
         </div>
       </div>

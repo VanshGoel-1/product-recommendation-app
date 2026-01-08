@@ -3,9 +3,9 @@ import Navbar from "./Navbar";
 
 export default function Layout() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#0B1026]">
       <Navbar />
-      <main className="pt-16">
+      <main>
         {/* The Outlet renders the current route's component (e.g., ChatPage) */}
         <Outlet />
       </main>

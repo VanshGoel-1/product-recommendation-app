@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Sparkles, ChevronRight, SlidersHorizontal, Loader2 } from "lucide-react";
+import { Search, Sparkles, ChevronRight, SlidersHorizontal, Loader2, ShoppingBag } from "lucide-react";
+import { useCart } from "../context/CartContext";
 import { useAuth } from "@clerk/clerk-react";
 import ProductCard from "../components/ProductCard";
 import type { Product } from "../components/ProductCard";
 import SkeletonCard from "../components/SkeletonCard";
 import CinematicBackground from "../components/CinematicBackground";
 
+import { useSearchParams } from "react-router-dom";
+
 export default function ChatPage() {
+  const [searchParams] = useSearchParams();
   const [query, setQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const [results, setResults] = useState<Product[]>([]);
@@ -26,11 +30,22 @@ export default function ChatPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const { getToken } = useAuth();
+  const { addToCart } = useCart();
 
-  // Disable body scroll when modal is open
+  // Disable body scroll and handle ESC key
   useEffect(() => {
     if (selectedProduct) {
       document.body.style.overflow = "hidden";
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") setSelectedProduct(null);
+      };
+      window.addEventListener("keydown", handleKeyDown);
+
+      return () => {
+        document.body.style.overflow = "unset";
+        window.removeEventListener("keydown", handleKeyDown);
+      };
     } else {
       document.body.style.overflow = "unset";
     }
@@ -49,7 +64,6 @@ export default function ChatPage() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Backend returns list of strings
         setBrands(["", ...res.data]);
       } catch (err) {
         console.error("Failed to fetch brands", err);
@@ -67,7 +81,6 @@ export default function ChatPage() {
 
     if (overrideQuery) setQuery(overrideQuery);
 
-    // Trigger transition state immediately
     setHasSearched(true);
     setLoading(true);
     setError("");
@@ -75,7 +88,7 @@ export default function ChatPage() {
 
     const payload = {
       query: searchQuery,
-      top_k: 8,
+      top_k: 4,
       ...(brandFilter && { brand_filter: brandFilter }),
       ...(minPrice && !isNaN(parseFloat(minPrice)) && { min_price: parseFloat(minPrice) }),
       ...(maxPrice && !isNaN(parseFloat(maxPrice)) && { max_price: parseFloat(maxPrice) }),
@@ -105,6 +118,17 @@ export default function ChatPage() {
     }
   };
 
+  // Trigger search from URL
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q && !hasSearched) {
+      // We set query and trigger search
+      // Pass q directly to handleSearch to ensure it uses the fresh value
+      setQuery(q);
+      handleSearch(q);
+    }
+  }, [searchParams]);
+
   const clearFilters = () => {
     setBrandFilter("");
     setMinPrice("");
@@ -112,7 +136,7 @@ export default function ChatPage() {
   };
 
   const examplePrompts = [
-    "Minimal wooden desk under $300",
+    "Minimal wooden desk under ₹10000",
     "Ergonomic chair for home office",
     "Modern sofa, neutral colors",
   ];
@@ -124,100 +148,125 @@ export default function ChatPage() {
       {/* EXPANDED PRODUCT OVERLAY */}
       <AnimatePresence>
         {selectedProduct && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedProduct(null)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/60 backdrop-blur-md"
             />
 
             {/* Expanded Card */}
             <motion.div
               layoutId={`card-container-${selectedProduct.id}`}
-              className="relative w-full max-w-4xl overflow-hidden rounded-3xl bg-[#0B1026] shadow-2xl ring-1 ring-white/10"
+              className="relative flex flex-col md:flex-row w-full max-w-5xl h-[85vh] md:h-[600px] overflow-hidden rounded-3xl bg-[#151c36] shadow-2xl ring-1 ring-white/10"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="grid grid-cols-1 md:grid-cols-2">
-                {/* Image Section */}
-                <div className="relative h-[300px] md:h-full bg-black">
-                  <motion.img
-                    layoutId={`card-image-${selectedProduct.id}`}
-                    src={selectedProduct.images?.[0] || "https://via.placeholder.com/300"}
-                    className="h-full w-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0B1026] via-transparent to-transparent opacity-60 md:hidden" />
 
-                  {/* Close Button Mobile */}
-                  <button
-                    onClick={() => setSelectedProduct(null)}
-                    className="absolute top-4 right-4 rounded-full bg-black/50 p-2 text-white backdrop-blur-md md:hidden"
-                  >
-                    <ChevronRight className="h-6 w-6 rotate-180" />
-                  </button>
-                </div>
+              {/* Image Section */}
+              <div className="relative h-[40%] md:h-full md:w-[45%] bg-[#0B1026] flex items-center justify-center p-8">
+                <motion.img
+                  layoutId={`card-image-${selectedProduct.id}`}
+                  src={selectedProduct.images?.[0] || "https://via.placeholder.com/300"}
+                  className="max-h-full max-w-full object-contain drop-shadow-2xl"
+                />
 
-                {/* Content Section */}
-                <div className="flex flex-col p-8 md:p-10">
-                  <div className="mb-4 flex items-start justify-between">
+                {/* Close Button Mobile */}
+                <button
+                  onClick={() => setSelectedProduct(null)}
+                  className="absolute top-4 right-4 rounded-full bg-black/40 p-2 text-white/80 backdrop-blur-md md:hidden hover:bg-black/60"
+                >
+                  <ChevronRight className="h-6 w-6 rotate-180" />
+                </button>
+              </div>
+
+              {/* Content Section */}
+              <div className="flex flex-col h-[60%] md:h-full md:w-[55%] bg-[#1A2342]">
+
+                {/* Header */}
+                <div className="p-6 md:p-8 pb-4 border-b border-white/5">
+                  <div className="flex items-start justify-between gap-4">
                     <motion.h2
                       layoutId={`card-title-${selectedProduct.id}`}
-                      className="text-3xl font-bold leading-tight text-white mb-2"
+                      className="text-xl md:text-2xl font-bold leading-tight text-white line-clamp-3"
                     >
                       {selectedProduct.title}
                     </motion.h2>
 
-                    {/* Desktop Close/Back Buttons */}
+                    {/* Desktop Close Button */}
                     <button
                       onClick={() => setSelectedProduct(null)}
-                      className="hidden md:flex flex-col items-center justify-center gap-1 rounded-xl bg-white/5 p-3 text-xs text-white/50 hover:bg-white/10 transition-colors"
+                      className="hidden md:flex flex-col items-center justify-center gap-1 rounded-xl bg-white/5 p-2.5 text-[10px] text-white/50 hover:bg-white/10 hover:text-white transition-colors"
                     >
                       <span className="font-bold">ESC</span>
                     </button>
                   </div>
 
-                  <div className="mb-6 flex flex-wrap gap-2">
+                  <div className="mt-4 flex flex-wrap gap-2">
                     {selectedProduct.brand && (
-                      <span className="rounded-full bg-blue-500/20 px-3 py-1 text-xs font-medium text-blue-300 border border-blue-500/30">
+                      <span className="rounded-md bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-300 border border-blue-500/20">
                         {selectedProduct.brand}
                       </span>
                     )}
-                    {selectedProduct.categories && selectedProduct.categories.split(",").map((cat, i) => (
-                      <span key={i} className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-gray-300 border border-white/10">
+                    {selectedProduct.categories && (
+                      Array.isArray(selectedProduct.categories)
+                        ? selectedProduct.categories
+                        : String(selectedProduct.categories)
+                          .replace(/[\[\]']/g, "") // Remove brackets and quotes if it's a stringified list
+                          .split(",")
+                    ).slice(0, 3).map((cat: string, i: number) => (
+                      <span key={i} className="rounded-md bg-white/5 px-2.5 py-1 text-xs font-medium text-gray-400 border border-white/5">
                         {cat.trim()}
                       </span>
                     ))}
                   </div>
+                </div>
 
-                  <p className="text-lg text-gray-300 leading-relaxed mb-8">
-                    {selectedProduct.generated_description}
+                {/* Scrollable Description */}
+                <div className="flex-1 overflow-y-auto p-6 md:p-8 py-6 custom-scrollbar">
+                  <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Description</h3>
+                  <p className="text-sm md:text-base text-gray-300 leading-relaxed whitespace-pre-line">
+                    {selectedProduct.generated_description ?
+                      selectedProduct.generated_description.replace(/\. /g, '.\n\n') // Add paragraph breaks for readability
+                      : "No description available."}
                   </p>
+                </div>
 
-                  <div className="mt-auto space-y-6 border-t border-white/10 pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Price</p>
-                        <p className="text-4xl font-bold text-emerald-400">
-                          ${selectedProduct.price?.toFixed(2)}
-                        </p>
-                      </div>
-                      <div className="flex gap-4">
-                        <button
-                          onClick={() => setSelectedProduct(null)}
-                          className="rounded-xl border border-white/10 px-6 py-3 font-medium text-white hover:bg-white/5 transition-colors"
-                        >
-                          Back to Search
-                        </button>
-                        <button className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-3 font-bold text-white shadow-lg shadow-blue-500/25 hover:bg-blue-500 transition-colors">
-                          View Deal <ChevronRight className="h-4 w-4" />
-                        </button>
-                      </div>
+                {/* Footer Actions */}
+                <div className="p-6 md:p-8 pt-4 border-t border-white/5 bg-[#1A2342] mt-auto">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Price</p>
+                      <p className="text-3xl font-bold text-emerald-400">
+                        ₹{(selectedProduct.price ? selectedProduct.price * 90 : 0).toLocaleString('en-IN')}
+                      </p>
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setSelectedProduct(null)}
+                        className="hidden sm:block rounded-xl border border-white/10 px-6 py-3 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (selectedProduct) {
+                            addToCart(selectedProduct);
+                            setSelectedProduct(null);
+                          }
+                        }}
+                        className="flex items-center gap-2 rounded-xl bg-blue-600 px-6 sm:px-8 py-3 font-bold text-white shadow-lg shadow-blue-500/25 hover:bg-blue-500 transition-colors"
+                      >
+                        <ShoppingBag className="h-5 w-5" />
+                        <span className="whitespace-nowrap">Add to Cart</span>
+                      </button>
                     </div>
                   </div>
                 </div>
               </div>
+
             </motion.div>
           </div>
         )}
@@ -229,7 +278,7 @@ export default function ChatPage() {
         {/* HERO / SEARCH SECTION */}
         <motion.div
           layout
-          className={`relative z-20 flex flex-col justify-center transition-all duration-700 ${hasSearched ? "pt-6 pb-6 min-h-[0px]" : "min-h-[85vh] pt-0"}`}
+          className={`relative z-20 flex flex-col justify-center transition-all duration-700 ${hasSearched ? "pt-24 pb-6 min-h-[0px]" : "min-h-[85vh] pt-0"}`}
         >
           {/* Header */}
           <motion.div layout className="text-center mb-8">
