@@ -11,7 +11,6 @@ import {
   Tooltip,
   Legend,
   ArcElement,
-  type Defaults,
   type ChartOptions
 } from "chart.js";
 import { useAuth } from "@clerk/clerk-react";
