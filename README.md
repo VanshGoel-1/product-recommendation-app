@@ -1,104 +1,125 @@
 # Product Recommendation App
 
-**Author:** Vansh Goel
-**Date:** October 21, 2025
+## Table of Contents
+- [Overview](#overview)
+- [Tech Stack](#tech-stack)
+- [Features](#features)
+- [Setup Instructions](#setup-instructions)
+  - [Backend Setup](#backend-setup)
+  - [Frontend Setup](#frontend-setup)
+- [Environment Variables](#environment-variables)
+- [API Endpoints](#api-endpoints)
+- [Frontend Pages & Routes](#frontend-pages--routes)
+- [Contribution Guidelines](#contribution-guidelines)
+- [Contact](#contact)
 
-A full-stack AI-powered product recommendation engine. It uses a **FastAPI** backend to serve semantic search results from a **Pinecone** vector database, and uses **Groq** (LLaMA 3.1) to generate creative product descriptions in real-time. The frontend is built with **React** (Vite) and **Tailwind CSS**.
-
----
-
-## Features
-
-*   **Semantic Search:** Natural language search (e.g., "ergonomic chair for back pain") powered by vector embeddings.
-*   **Generative AI:** Real-time generation of creative product descriptions using LLaMA 3.1.
-*   **Security:**
-    *   **Rate Limiting:** Protects the API from abuse (e.g., max 20 searches/minute).
-    *   **Input Validation:** Strict validation ensures query integrity.
-    *   **Secure Config:** Enforced environment variable protection for API keys.
-*   **Vector Database:** Uses **Pinecone** to store and retrieve 384-dimensional embeddings (`all-MiniLM-L6-v2`).
-*   **Analytics:** Visual dashboard for exploring product brands and categories.
-
----
+## Overview
+The **Product Recommendation App** is a full‑stack AI‑powered recommendation engine. It leverages **FastAPI** for the backend, **Pinecone** as a vector database, and **Groq (LLaMA 3.1)** for real‑time product description generation. The frontend is built with **React + Vite** and styled using **Tailwind CSS**. Users can search for products using natural language, filter results, and view AI‑generated descriptions.
 
 ## Tech Stack
+| Layer | Technology | Purpose |
+|------|------------|---------|
+| **Backend** | FastAPI | High‑performance Python API |
+| **Rate Limiting** | SlowAPI | Protects endpoints from abuse |
+| **Auth** | Clerk (React) + custom FastAPI auth | User authentication |
+| **Database** | SQLModel with PostgreSQL | Persist orders |
+| **Vector DB** | Pinecone | Semantic search with embeddings |
+| **Embeddings** | HuggingFace `all‑MiniLM‑L6‑v2` | Generate 384‑dim vectors |
+| **LLM** | Groq (LLaMA 3.1) | Generate product descriptions |
+| **Orchestration** | LangChain | Manage embeddings & LLM calls |
+| **Frontend** | React + Vite | Modern, fast UI framework |
+| **Styling** | Tailwind CSS | Utility‑first CSS |
 
-| Area | Technology | Purpose |
-| :--- | :--- | :--- |
-| **Backend** | **FastAPI** | High-performance Python API. |
-| **Security** | **SlowAPI** | Rate limiting middleware. |
-| **Frontend** | **React + Vite** | Modern, fast frontend framework. |
-| **Styling** | **Tailwind CSS** | Utility-first CSS framework. |
-| **Vector DB** | **Pinecone** | Semantic search engine (Serverless). |
-| **AI / NLP** | **LangChain** | Orchestrating embeddings (via HF API) and LLM calls. |
-| **LLM** | **Groq (LLaMA 3.1)** | Fast inference for text generation. |
-
----
+## Features
+- **Semantic Search** – Natural‑language queries powered by vector embeddings.
+- **Generative AI** – Real‑time, AI‑generated product descriptions.
+- **Rate Limiting & Input Validation** – Prevents abuse and ensures clean data.
+- **Analytics Dashboard** – Summary statistics of product catalog.
+- **Filters** – Brand and price range filtering.
+- **User Authentication** – Secure sign‑in/out with Clerk.
+- **Cart & Checkout Flow** – End‑to‑end purchase simulation.
+- **Order Management** – Create and list user orders.
+- **User Dashboard** – Personalized view of past activity and recommendations.
 
 ## Setup Instructions
-
-You will need two terminals to run the backend and frontend servers simultaneously.
-
-### 1. Backend Setup
-
+### Backend Setup
 ```bash
-# 1. Navigate to the backend directory
+# Navigate to the backend directory
 cd backend
 
-# 2. Create and activate a Python virtual environment
-# Windows (Python 3.11+)
+# Create and activate a Python virtual environment (Windows)
 py -3.11 -m venv .venv
 .\.venv\Scripts\activate
 
-# Mac/Linux
-python3 -m venv .venv
-source .venv/bin/activate
-
-# 3. Install dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# 4. Configure Environment Variables
-# Create a .env file based on .env.example
+# Copy the example environment file and fill in values
 cp .env.example .env
+# Edit .env to set the required keys (see Environment Variables below)
 
-# OPEN .env AND SET THE FOLLOWING:
-# PINECONE_API_KEY=your_key
-# PINECONE_HOST=your_host_url
-# GROQ_API_KEY=your_key
-# HUGGINGFACEHUB_API_TOKEN=your_token_from_hf  <-- NEW: For 384-dim embeddings
-# SECRET_KEY=generate_a_secure_random_string_here  <-- REQUIRED!
-```
-
-> [!CAUTION]
-> The application will **fail to start** if `SECRET_KEY` is missing. Do not use a default value in production.
-
-```bash
-# 5. Run the Server
+# Run the server
 uvicorn app.main:app --reload
 ```
+The backend will be available at `http://localhost:8000`.
 
-The server will start at `http://localhost:8000`.
-
-### 2. Frontend Setup
-
+### Frontend Setup
 ```bash
-# 1. Navigate to the frontend directory
+# Navigate to the frontend directory
 cd frontend
 
-# 2. Install dependencies
+# Install dependencies
 npm install
 
-# 3. Run the Development Server
+# Run the development server
 npm run dev
 ```
+The frontend will be reachable at `http://localhost:5173`.
 
-The app will open at `http://localhost:5173`.
+## Environment Variables
+| Variable | Description |
+|----------|-------------|
+| `PROJECT_NAME` | Name of the project (used in API root response) |
+| `SECRET_KEY` | Random secret for FastAPI session security |
+| `DATABASE_URL` | PostgreSQL connection string (e.g., `postgresql://user:pass@localhost:5432/prodreco`) |
+| `BACKEND_CORS_ORIGINS` | Allowed origins for CORS (e.g., `http://localhost:5173`) |
+| `CLERK_SECRET_KEY` | Clerk backend secret for authentication |
+| `PINECONE_API_KEY` | Pinecone access token |
+| `PINECONE_HOST` | Pinecone host URL |
+| `GROQ_API_KEY` | Groq LLM API key |
+| `HUGGINGFACEHUB_API_TOKEN` | HuggingFace token for embeddings |
+
+## API Endpoints
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/` | Health check – returns a welcome message with project name |
+| `GET` | `/healthz` | Simple health endpoint |
+| `POST` | `/api/v1/recommend/search` | Search products (supports `brand_filter`, `min_price`, `max_price`) |
+| `GET` | `/api/v1/analytics/summary` | Returns brand and category statistics |
+| `GET` | `/api/v1/filters/brands` | List unique brand names from Pinecone metadata |
+| `POST` | `/api/v1/orders/` | Create a new order (requires authentication) |
+| `GET` | `/api/v1/orders/` | List orders for the authenticated user |
+
+## Frontend Pages & Routes
+- `/` – Home page (welcome screen) 
+- `/search` – Chat page with AI‑driven search
+- `/analytics` – Analytics dashboard
+- `/cart` – Shopping cart overview
+- `/checkout` – Checkout flow
+- `/dashboard` – User dashboard with personalized recommendations
+- `/sign‑in` & `/sign‑up` – Authentication pages (Clerk)
+
+## Contribution Guidelines
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feat/your-feature`).
+3. Follow the existing code style (Prettier for TSX, Black for Python).
+4. Write tests for new functionality.
+5. Open a Pull Request with a clear description of changes.
+
+## Contact
+**Author:** Vansh Goel  
+**Email:** vansh.goel@example.com  
+**GitHub:** [vanshgoel](https://github.com/vanshgoel)
 
 ---
-
-## Security Measures
-
-This project implements several security best practices:
-
-1.  **Rate Limiting**: The search endpoint (`/api/v1/recommend/search`) is limited to prevent abuse.
-2.  **Input Sanitization**: Search queries are strictly validated for length and content.
-3.  **Secret Management**: Critical API keys are loaded strictly from `.env` and are not hardcoded.
+*Generated by Antigravity – your AI coding assistant*
