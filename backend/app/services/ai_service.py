@@ -1,7 +1,7 @@
 # File: backend/app/services/ai_service.py
 
 from pinecone import Pinecone
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from app.core.config import settings
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
@@ -15,18 +15,15 @@ class AIService:
 
     def __new__(cls):
         if cls._instance is None:
-            print("Initializing AI Service (loading models, connecting to DB)...")
+            print("Initializing AI Service (API-based, connecting to DB)...")
             cls._instance = super(AIService, cls).__new__(cls)
 
-            # 1. Load the Embedding Model
-            model_name = "sentence-transformers/all-MiniLM-L6-v2"
-            model_kwargs = {'device': 'cpu'}
-            encode_kwargs = {'normalize_embeddings': False}
-
-            cls._instance.embeddings = HuggingFaceEmbeddings(
-                model_name=model_name,
-                model_kwargs=model_kwargs,
-                encode_kwargs=encode_kwargs
+            # 1. Load the Embedding Model (API-based via HF Inference API)
+            # This uses the SAME model as before (384 dim) but via API 
+            # to avoid loading torch/transformers locally.
+            cls._instance.embeddings = HuggingFaceEndpointEmbeddings(
+                model="sentence-transformers/all-MiniLM-L6-v2",
+                huggingfacehub_api_token=settings.HUGGINGFACEHUB_API_TOKEN
             )
 
             # 2. Connect to Pinecone

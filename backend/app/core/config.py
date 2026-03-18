@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     PINECONE_API_KEY: str
     PINECONE_HOST: str
     GROQ_API_KEY: str
+    HUGGINGFACEHUB_API_TOKEN: str
 
     class Config:
         # This tells Pydantic to load the variables from a .env file

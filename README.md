@@ -28,8 +28,8 @@ A full-stack AI-powered product recommendation engine. It uses a **FastAPI** bac
 | **Security** | **SlowAPI** | Rate limiting middleware. |
 | **Frontend** | **React + Vite** | Modern, fast frontend framework. |
 | **Styling** | **Tailwind CSS** | Utility-first CSS framework. |
-| **Vector DB** | **Pinecone** | Semantic search engine. |
-| **AI / NLP** | **LangChain** | Orchestrating embeddings and LLM calls. |
+| **Vector DB** | **Pinecone** | Semantic search engine (Serverless). |
+| **AI / NLP** | **LangChain** | Orchestrating embeddings (via HF API) and LLM calls. |
 | **LLM** | **Groq (LLaMA 3.1)** | Fast inference for text generation. |
 
 ---
@@ -64,6 +64,7 @@ cp .env.example .env
 # PINECONE_API_KEY=your_key
 # PINECONE_HOST=your_host_url
 # GROQ_API_KEY=your_key
+# HUGGINGFACEHUB_API_TOKEN=your_token_from_hf  <-- NEW: For 384-dim embeddings
 # SECRET_KEY=generate_a_secure_random_string_here  <-- REQUIRED!
 ```
 
@@ -81,7 +82,7 @@ The server will start at `http://localhost:8000`.
 
 ```bash
 # 1. Navigate to the frontend directory
-cd frontend/product-recommendation-app
+cd frontend
 
 # 2. Install dependencies
 npm install
