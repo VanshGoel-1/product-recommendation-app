@@ -53,12 +53,22 @@ async def generate_description_for_match(
         except (ValueError, SyntaxError):
             image_list = []
 
+    # ---- Convert Price to INR (Dataset is USD, UI is INR) ----
+    usd_price = metadata.get("price")
+    try:
+        if usd_price is not None:
+             inr_price = float(usd_price) * 90.0
+        else:
+             inr_price = 0.0
+    except (ValueError, TypeError):
+        inr_price = 0.0
+
     return ProductSearchResult(
         id=match.get("id", ""),
         score=match.get("score", 0),
         title=title,
         brand=metadata.get("brand"),
-        price=metadata.get("price"),
+        price=inr_price,
         images=image_list,
         categories=metadata.get("categories"),
         generated_description=gen_description.content,
@@ -90,11 +100,18 @@ async def search(
         pinecone_filter["brand"] = {"$eq": payload.brand_filter}
 
     price_filter = {}
+    
+    # Conversion rate: 1 USD = 90 INR
+    # Dataset is in USD, filters are in INR
     if payload.min_price is not None:
-        price_filter["$gte"] = payload.min_price
+        price_filter["$gte"] = payload.min_price / 90.0
     if payload.max_price is not None:
+        # Convert max_price to USD for filtering
+        max_p_usd = payload.max_price / 90.0
+        min_p_usd = (payload.min_price / 90.0) if payload.min_price is not None else 0
+        
         if payload.min_price is None or payload.max_price >= payload.min_price:
-            price_filter["$lte"] = payload.max_price
+            price_filter["$lte"] = max_p_usd
         else:
             raise HTTPException(
                 status_code=400,

@@ -137,7 +137,7 @@ export default function DashboardPage() {
                                                                 <p className="text-xs text-gray-400">{item.brand}</p>
                                                             </div>
                                                             <p className="text-sm font-bold text-emerald-400">
-                                                                ₹{(item.price * 90).toLocaleString("en-IN")}
+                                                                ₹{(item.price || 0).toLocaleString("en-IN")}
                                                             </p>
                                                         </div>
                                                     ))}

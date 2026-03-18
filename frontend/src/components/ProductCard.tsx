@@ -101,7 +101,7 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
           <div className="flex flex-col">
             <span className="text-xs uppercase tracking-wider text-gray-500">Price</span>
             <span className="text-xl font-bold text-emerald-400">
-              ₹{(product.price ? product.price * 90 : 0).toLocaleString('en-IN')}
+              ₹{(product.price || 0).toLocaleString('en-IN')}
             </span>
           </div>
 

@@ -129,10 +129,36 @@ export default function ChatPage() {
     }
   }, [searchParams]);
 
-  const clearFilters = () => {
+  const clearFilters = async () => {
     setBrandFilter("");
     setMinPrice("");
     setMaxPrice("");
+    
+    // Trigger search with cleared filters immediately
+    setLoading(true);
+    try {
+      const token = await getToken();
+      if (!token) return;
+
+      const payload = {
+        query: query,
+        top_k: 4
+      };
+
+      const url = `${import.meta.env.VITE_API_URL}/recommend/search`;
+      const res = await axios.post<Product[]>(url, payload, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setResults(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const examplePrompts = [
@@ -240,7 +266,7 @@ export default function ChatPage() {
                     <div>
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Price</p>
                       <p className="text-3xl font-bold text-emerald-400">
-                        ₹{(selectedProduct.price ? selectedProduct.price * 90 : 0).toLocaleString('en-IN')}
+                        ₹{(selectedProduct.price || 0).toLocaleString('en-IN')}
                       </p>
                     </div>
                     <div className="flex gap-3">
@@ -405,7 +431,7 @@ export default function ChatPage() {
 
                   {/* Price Filter */}
                   <div className="space-y-3">
-                    <label className="text-sm font-medium text-gray-300">Price Limit</label>
+                    <label className="text-sm font-medium text-gray-300">Price Limit (₹)</label>
                     <div className="flex gap-3">
                       <input
                         type="number"
@@ -423,6 +449,15 @@ export default function ChatPage() {
                       />
                     </div>
                   </div>
+
+                  {/* Apply Button */}
+                  <button
+                    onClick={() => handleSearch()}
+                    disabled={loading}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 py-3 text-sm font-bold text-white transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply Filters"}
+                  </button>
                 </div>
               </div>
 

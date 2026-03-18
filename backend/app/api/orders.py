@@ -8,7 +8,7 @@ from app.models.models import Order
 from app.schemas.order import OrderCreate, OrderRead
 from app.core.auth import get_auth_user
 
-router = APIRouter(prefix="/orders", tags=["orders"])
+router = APIRouter(prefix="/api/v1/orders", tags=["orders"])
 
 @router.post("/", response_model=OrderRead)
 async def create_order(
