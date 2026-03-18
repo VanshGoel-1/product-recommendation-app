@@ -122,3 +122,5 @@ dist
 # Vite
 dist/
 *.local
+
+.vercel

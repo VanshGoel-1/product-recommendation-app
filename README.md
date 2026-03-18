@@ -10,6 +10,7 @@
 - [Environment Variables](#environment-variables)
 - [API Endpoints](#api-endpoints)
 - [Frontend Pages & Routes](#frontend-pages--routes)
+- [Deployment](#deployment)
 - [Contribution Guidelines](#contribution-guidelines)
 - [Contact](#contact)
 
@@ -108,6 +109,43 @@ The frontend will be reachable at `http://localhost:5173`.
 - `/checkout` – Checkout flow
 - `/dashboard` – User dashboard with personalized recommendations
 - `/sign‑in` & `/sign‑up` – Authentication pages (Clerk)
+
+## Deployment
+
+The repository uses GitHub Actions (`.github/workflows/deploy.yml`) to deploy automatically on every push to `main`.
+
+| Service | Target | Trigger |
+|---------|--------|---------|
+| Frontend | Vercel | push to `main` |
+| Backend | Render | push to `main` (deploy hook) |
+
+### Required GitHub Secrets
+
+Add these in **Settings → Secrets and variables → Actions**:
+
+| Secret | How to get it |
+|--------|---------------|
+| `VERCEL_TOKEN` | Vercel dashboard → Account Settings → Tokens |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk dashboard → API Keys |
+| `VITE_API_BASE_URL` | Your Render service URL (e.g. `https://your-service.onrender.com`) |
+| `RENDER_DEPLOY_HOOK_URL` | Render dashboard → your service → Settings → Deploy Hook |
+
+### One-time Vercel setup (run locally once)
+
+```bash
+cd frontend
+npx vercel link   # links the project and creates .vercel/project.json
+```
+
+This creates `.vercel/project.json` which the CI workflow reads via `vercel pull`.
+Commit the `.vercel/` directory (it contains no secrets).
+
+### One-time Render setup
+
+1. Go to [render.com](https://render.com) → New → Blueprint and point it at this repo.
+   Render will detect `render.yaml` and create the backend service automatically.
+2. Fill in all environment variables in the Render dashboard (same keys as `backend/.env.example`).
+3. Copy the **Deploy Hook URL** from the service's Settings page into the `RENDER_DEPLOY_HOOK_URL` GitHub secret.
 
 ## Contribution Guidelines
 1. Fork the repository.
