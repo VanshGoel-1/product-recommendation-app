@@ -12,8 +12,10 @@ async def get_auth_user(request: Request) -> dict:
         request_state = clerk.authenticate_request(
             request,
             AuthenticateRequestOptions(
-                # Optional but recommended in dev
-                authorized_parties=["http://localhost:5173"]
+                authorized_parties=[
+                    "http://localhost:5173",
+                    "https://product-recommendation-app-wine.vercel.app",
+                ]
             )
         )
 
