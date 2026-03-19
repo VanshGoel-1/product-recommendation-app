@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "ProdRecommendationApp"
     SECRET_KEY: str
     DATABASE_URL: str = "sqlite:///./test.db"
-    BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:5174"]
+    BACKEND_CORS_ORIGINS: list[str] = ["https://product-recommendation-app-wine.vercel.app", "http://localhost:5173"]
     CLERK_SECRET_KEY: str
     # Pinecone & AI Keys
     PINECONE_API_KEY: str

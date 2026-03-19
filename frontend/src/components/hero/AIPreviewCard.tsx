@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Sparkles, CheckCircle2 } from "lucide-react";
+import lampImg from "../../assets/lamp.webp";
 
 export default function AIPreviewCard() {
     return (
@@ -14,7 +15,7 @@ export default function AIPreviewCard() {
             <div className="relative aspect-square w-full rounded-2xl bg-[#0B1026]/50 p-2 flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-purple-500/10" />
                 <img
-                    src="/src/assets/lamp.webp"
+                    src={lampImg}
                     alt="Minimalist Study Lamp"
                     className="relative z-10 w-full h-full object-cover rounded-xl shadow-lg transform transition-transform duration-500 hover:scale-105"
                 />
